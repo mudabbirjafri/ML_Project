@@ -4,6 +4,7 @@ import random
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import sklearn
 from sklearn import datasets, svm, tree, preprocessing, metrics
 import sklearn.ensemble as ske
 import os
@@ -36,7 +37,7 @@ nyc_data.describe()
 bins = [np.quantile(nyc_data['SALE PRICE'],0.20),1, np.quantile(nyc_data['SALE PRICE'],0.4), np.quantile(nyc_data['SALE PRICE'],0.6), np.quantile(nyc_data['SALE PRICE'],0.80), np.quantile(nyc_data['SALE PRICE'],1)]
 nyc_data['SALE_PRICE_BIN'] = pd.cut(nyc_data['SALE PRICE'], bins =bins,include_lowest=False)
 
-f, (ax1, ax2) = plt.subplots(2, figsize = [16,12])
+f, (ax1, ax2)= plt.subplots(2, figsize = [16,12])
 fig1 = sns.scatterplot(x = 'Longitude', y = 'Latitude', hue = 'BOROUGH',
                 style = 'BOROUGH',data=nyc_data,ax=ax1).set_title('GEO REAL ESTATE MAP BY DISTRICT')
 fig2 = sns.scatterplot(x = 'Longitude', y = 'Latitude', hue = 'SALE_PRICE_BIN',
@@ -49,6 +50,12 @@ plt.show()
 nyc_data.dtypes
 nyc_data.shape
 
+nyc_data['BOROUGH'][nyc_data['BOROUGH']==1]='Manhattan'
+nyc_data['BOROUGH'][nyc_data['BOROUGH']==2]='Bronx'
+nyc_data['BOROUGH'][nyc_data['BOROUGH']==3]='Brooklyn'
+nyc_data['BOROUGH'][nyc_data['BOROUGH']==4]='Queens'
+nyc_data['BOROUGH'][nyc_data['BOROUGH']==5]='Staten Island'
+
 # create population tables
 my_tables = {}
 for field in nyc_data.columns:
@@ -56,40 +63,69 @@ for field in nyc_data.columns:
 
 # preprocessing
 nyc_data['SALE DATE'] = pd.to_datetime(nyc_data["SALE DATE"])
-nyc_data['ZIP CODE'] = nyc_data['ZIP CODE'].astype('str')
-nyc_data['BUILDING CLASS AT TIME OF SALE']=pd.Categorical(nyc_data['BUILDING CLASS AT TIME OF SALE']).codes
-nyc_data['BUILDING CLASS AT TIME OF SALE']=nyc_data['BUILDING CLASS AT TIME OF SALE'].astype('category').cat.codes
-
-
 nyc_data.drop(['EASE-MENT', 'APARTMENT NUMBER'], axis=1, inplace=True) #Remove Empty columns
 nyc_data =nyc_data.loc[:, ~nyc_data.columns.str.contains('^Unnamed')]
 
 
+# So correlation
+corr_list = nyc_data.corr()['SALE PRICE'].sort_values(ascending = False)
+corr_list
+
+# this does OneHotEncoder and LabelEncoder in one step
+from sklearn.preprocessing import LabelBinarizer
+encoder = LabelBinarizer()
+nyc_data['BUILDING CLASS CATEGORY'] = encoder.fit_transform(nyc_data['BUILDING CLASS CATEGORY'])
+nyc_data['BOROUGH'] = encoder.fit_transform(nyc_data['BOROUGH'])
+nyc_data['NEIGHBORHOOD'] = encoder.fit_transform(nyc_data['NEIGHBORHOOD'])
+# nyc_data['TOTAL UNITS'] = encoder.fit_transform(nyc_data['TOTAL UNITS'])
+# nyc_data['BUILDING CLASS AT TIME OF SALE'] = encoder.fit_transform(nyc_data['BUILDING CLASS AT TIME OF SALE'])
+# nyc_data['TAX CLASS AT TIME OF SALE'] = encoder.fit_transform(nyc_data['TAX CLASS AT TIME OF SALE'])
+
 #Use LabelEncoder to convert labels into binary codes
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 LE = LabelEncoder()
 nyc_data['NEIGHBORHOOD'] = LE.fit_transform(nyc_data['NEIGHBORHOOD'])
-nyc_data['BUILDING CLASS CATEGORY'] = LE.fit_transform(nyc_data['BUILDING CLASS CATEGORY'])
 nyc_data['BUILDING CLASS AT PRESENT'] = LE.fit_transform(nyc_data['BUILDING CLASS AT PRESENT'])
+nyc_data['TAX CLASS AT TIME OF SALE'] = LE.fit_transform(nyc_data['TAX CLASS AT TIME OF SALE'])
 nyc_data['TAX CLASS AT PRESENT'] = LE.fit_transform(nyc_data['TAX CLASS AT PRESENT'])
 nyc_data['BUILDING CLASS AT TIME OF SALE'] = LE.fit_transform(nyc_data['BUILDING CLASS AT TIME OF SALE'])
 nyc_data['ADDRESS'] = LE.fit_transform(nyc_data['ADDRESS'])
+nyc_data['BOROUGH'] = LE.fit_transform(nyc_data['BOROUGH'])
+nyc_data['BUILDING CLASS CATEGORY'] = LE.fit_transform(nyc_data['BUILDING CLASS CATEGORY'])
 
-# create the model
+
+
+# Create training and test data
 from sklearn.model_selection import train_test_split
-X = nyc_data.loc[:, nyc_data.columns != 'SALE PRICE']
+X = nyc_data[['TAX CLASS AT PRESENT','BUILDING CLASS CATEGORY','GROSS SQUARE FEET','BOROUGH','TOTAL UNITS','BUILDING CLASS AT TIME OF SALE','TAX CLASS AT TIME OF SALE']]
+X = nyc_data[['GROSS SQUARE FEET']]
 Y = nyc_data['SALE PRICE']
 X_train, X_test, y_train, y_test = train_test_split(X,Y, random_state=66, test_size=0.2)
 
-# Scale the data
-from sklearn.preprocessing import StandardScaler
-scaler=StandardScaler().fit(X_train)
-x_scaled_train=scaler.transform(X_train)
-x_scaled_test = scaler.transform(X_test)
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+lin_reg = LinearRegression()
+lin_reg.fit(X_train, y_train)
+lin_reg.intercept_, lin_reg.coef_
+y_pred = lin_reg.predict(X_test)
+mean_squared_error(y_test, y_pred)
 
+X_train.shape
+
+model.summary()
+# Start Keras
+# Create keras model
+from keras import models
+from keras import layers
+from keras import metrics
+from keras import callbacks
+from keras.layers import Dense
+from keras import regularizers
 model = models.Sequential()
-model.add(layers.Dense(64, activation='relu', input_shape=(X_train.shape[1],)))
-model.add(layers.Dense(64, activation='relu'))
-model.add(layers.Dense(64, activation='relu'))
+model.add(layers.Dense(79, activation='relu',)))
+model.add(layers.Dense(3, activation='relu'))
+model.add(layers.Dense(2, activation='relu'))
 model.add(layers.Dense(1, activation='linear'))
-model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mean_absolute_error', 'mean_squared_error'])
+model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mean_squared_error'])
+history1 = model.fit(X_test, y_train,
+                    epochs=2, batch_size=50)
