@@ -47,8 +47,9 @@ nyc_data['BOROUGH'][nyc_data['BOROUGH']==4]='Queens'
 nyc_data['BOROUGH'][nyc_data['BOROUGH']==5]='Staten Island'
 
 # create bins
-bins = [np.quantile(nyc_data['SALE PRICE'],0.20),1, np.quantile(nyc_data['SALE PRICE'],0.4), np.quantile(nyc_data['SALE PRICE'],0.6), np.quantile(nyc_data['SALE PRICE'],0.80), np.quantile(nyc_data['SALE PRICE'],1)]
+bins = [np.quantile(nyc_data['SALE PRICE'],0.2),np.quantile(nyc_data['SALE PRICE'],0.4), np.quantile(nyc_data['SALE PRICE'],0.6), np.quantile(nyc_data['SALE PRICE'],0.80), np.quantile(nyc_data['SALE PRICE'],1)]
 nyc_data['SALE_PRICE_BIN'] = pd.cut(nyc_data['SALE PRICE'], bins =bins,include_lowest=False)
+bins
 
 f, (ax1, ax2)= plt.subplots(2, figsize = [16,12])
 fig1 = sns.scatterplot(x = 'Longitude', y = 'Latitude', hue = 'BOROUGH',
@@ -130,7 +131,7 @@ model.add(layers.Dense(75, activation='relu'))
 model.add(layers.Dense(50, activation='relu'))
 model.add(layers.Dense(25, activation='relu'))
 model.add(layers.Dense(1, activation='linear'))
-model.compile(loss='mean_squared_error', optimizer='adam')
+model.compile(loss='mean_absolute_error', optimizer='adam')
 
 history = model.fit(X_train, y_train,
                     epochs=100, batch_size=50,
