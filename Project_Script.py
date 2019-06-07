@@ -64,16 +64,20 @@ plt.show()
 # We notice Manhattan has the highest concentration of expensive properties; however, we also see Brooklyn and Queens having fairly expensive properties.
 # Brooklyn and Queens could be possible areas to invest money
 
-nyc_data.plot(y= 'SALE PRICE', x = 'BOROUGH', figsize =[12,8])
-
 
 # Filter?
 nyc_data = nyc_data[nyc_data['SALE PRICE']>100]
+
+sns.boxplot(x='BOROUGH', y='SALE PRICE', data= nyc_data[nyc_data['SALE PRICE']<np.quantile(nyc_data['SALE PRICE'],0.9)], palette = 'Set3')
+
+
+
 
 # create population tables
 my_tables = {}
 for field in nyc_data.columns:
     my_tables[field] = nyc_data.groupby([field]).count().iloc[:,:1]/len(nyc_data)
+
 
 # preprocessing
 nyc_data['SALE DATE'] = pd.to_datetime(nyc_data["SALE DATE"])
@@ -124,6 +128,9 @@ lin_reg.fit(X_train, y_train)
 y_pred = lin_reg.predict(X_test)
 mean_squared_error(y_test, y_pred)
 mean_absolute_error(y_test, y_pred)
+y_pred_test_inverse = scaler.inverse_transform(y_pred)
+y_test_test_inverse = scaler.inverse_transform(y_test)
+
 
 # Lets utilize a ensemble model
 from sklearn.ensemble import RandomForestRegressor
@@ -132,6 +139,8 @@ random_forest.fit(X_train, y_train)
 y_pred = random_forest.predict(X_test)
 mean_squared_error(y_test, y_pred)
 mean_absolute_error(y_test, y_pred)
+mean_squared_error(y_test_test_inverse, y_pred_test_inverse)
+mean_absolute_error(y_test_test_inverse, y_pred_test_inverse)
 
 # Create keras model
 from keras import models
