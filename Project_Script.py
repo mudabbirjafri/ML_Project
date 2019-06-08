@@ -10,9 +10,9 @@ import sklearn.ensemble as ske
 import os
 import datetime
 
-os.chdir('C:/Users/adhillon/OneDrive - NVIDIA Corporation/AnacondaProjects/OPS 808/Dataset/')
+os.chdir('C:/Users/Mudabbir/Desktop/Spring Quarter/Machine Learning 808/nyc-property-sales')
 nyc_data_df = pd.read_csv('nyc-rolling-sales.csv')
-os.chdir('C:/Users/adhillon/Downloads')
+os.chdir('C:/Users/Mudabbir/github/ML_Project/Data')
 geo_location = pd.read_csv('us-zip-code-latitude-and-longitude (2).csv', sep = ';')
 geo_location['Zip'] = geo_location['Zip'].astype('int64')
 geo_location_zip =  geo_location.set_index('Zip')
@@ -48,9 +48,11 @@ nyc_data['BOROUGH'][nyc_data['BOROUGH']==5]='Staten Island'
 
 # create bins
 bins = [np.quantile(nyc_data['SALE PRICE'],0.2),np.quantile(nyc_data['SALE PRICE'],0.4), np.quantile(nyc_data['SALE PRICE'],0.5), np.quantile(nyc_data['SALE PRICE'],0.6), np.quantile(nyc_data['SALE PRICE'],0.80), np.quantile(nyc_data['SALE PRICE'],1)]
-nyc_data['SALE_PRICE_BIN'] = pd.cut(nyc_data['SALE PRICE'], bins =bins,include_lowest=False)
+labels =['Very Low','Low', 'Medium', 'High', 'Very High']
+nyc_data['SALE_PRICE_BIN'] = pd.cut(nyc_data['SALE PRICE'], labels=labels, bins =bins,include_lowest=False)
 
 # visualization
+plt.style.use('ggplot')
 f, (ax1, ax2)= plt.subplots(2, figsize = [12,12])
 fig1 = sns.scatterplot(x = 'Longitude', y = 'Latitude', hue = 'BOROUGH',
                 style = 'BOROUGH',data=nyc_data,ax=ax1)
